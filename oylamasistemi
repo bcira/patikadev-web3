@@ -1,0 +1,88 @@
+// Oylama Sistemi Projesi
+
+actor Voting {
+
+    //oylama seçenekleri ve verilen oylar
+    type vote_option = {
+        id: Int;
+        name: Text;
+        votes: Int;
+    };
+
+    //Oylama seçenekleri
+    var options: [vote_option] = [];
+
+    //Oylama işlemi süresi
+    var voting_closed: Bool = false;
+
+    //oylama işlemini başlat
+    public func start_voting(optionsList: [Text]) : async Text {  
+        if (voting_closed) {
+            return "Oylama işlemi şu an kapalı!";
+        };
+
+        
+        options := List.map(optionsList, func(option: Text) : vote_option {
+            {
+                id = Array.size(options) + 1;
+                name = option;
+                votes = 0;
+            }
+        });
+
+        return "Oylama işlemi başladı!";
+    };
+
+    
+    public func vote(optionId: Int) : async Text {
+        if (voting_closed) {
+            return "Bu oylama kapatılmış, artık oy verilemez!";
+        };
+
+        //oy verilen seçenek
+        let selected_option = List.filter(options, func(option: vote_option) : Bool { option.id == optionId });
+
+        //liste boşsa, geçersiz seçenektir
+        if (List.isEmpty(selected_option)) {
+            return "Geçersiz seçenek, tekrar deneyin!";
+        };
+
+        //seçeneğe oy ekle
+        let option = selected_option[0];
+        let updated_option = {
+            id = option.id;
+            name = option.name;
+            votes = option.votes + 1;
+        };
+
+        // Güncellenmiş seçeneği options listesine yedekleyelim
+        options := List.map(options, func(opt: vote_option) : vote_option {
+            if (opt.id == option.id) { updated_option } else { opt }
+        });
+
+        return "Oy kullanam başarılı!";
+    };
+
+    //Oylama sonuçlarını getir
+    public func get_results() : async [vote_option] {  
+        return options;
+    };
+
+    //oylamayı kapatma
+    public func close_voting() : async Text { 
+        voting_closed := true;
+        return "Oylama işlemi kapatıldı!";
+    };
+
+    //En çok oylanan seçeneği getir
+    public func get_winner() : async Text {
+        if (voting_closed) {
+            switch (List.maxBy(options, func(option: vote_option) : Int { option.votes })) {
+                case (?exist) : return "Oylama sonuçları bulunamadı!";
+                case (some(winner)) : return "En çok oylanan seçenek: " # winner.name;
+            };
+        } else {
+            return "Oylama işlemi hala devam ediyor!";
+        }
+    };
+};
